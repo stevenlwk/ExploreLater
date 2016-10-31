@@ -4,7 +4,7 @@
 
 BOOL CALLBACK DialogProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-void InitList(HWND hWnd);
+void Init(HWND hWnd);
 
 void LoadStartupDirectories(HWND hWnd, BOOL selectAll = false);
 

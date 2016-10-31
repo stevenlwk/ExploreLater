@@ -26,7 +26,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 	if(SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, szStartupPath))) {
 		StringCchCatA(szStartupPath, MAX_PATH, "\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\");
 	}
-
+	
 	hDialog = CreateDialog(hInst, MAKEINTRESOURCE(IDD_EXPLORELATER), 0, DialogProc);
 	if(!hDialog) {
 		return FALSE;
@@ -48,10 +48,7 @@ BOOL CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	switch(message) {
 		case WM_INITDIALOG:
 		{
-			HWND hCheck = GetDlgItem(hWnd, IDC_CHECK);
-
-			InitList(hWnd);
-			PostMessage(hCheck, BM_SETCHECK, BST_CHECKED, 0);
+			Init(hWnd);
 			LoadStartupDirectories(hWnd, true);
 		}
 		return TRUE;
@@ -63,6 +60,14 @@ BOOL CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 							AddAllOpenExplorers(hWnd);
 							LoadStartupDirectories(hWnd);
 							break;
+						case IDC_CHECK:
+						{
+							HWND hCheck = GetDlgItem(hWnd, IDC_CHECK);
+							BOOL checked = Button_GetCheck(hCheck);
+
+							WritePrivateProfileStringA("Default", "closeAfterAdded", checked ? "1" : "0", ".\\config.ini");
+							break;
+						}
 						case IDREMOVE:
 							RemoveAllSelectedLinks(hWnd);
 							LoadStartupDirectories(hWnd);
@@ -74,7 +79,7 @@ BOOL CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 					break;
 			}
 			return TRUE;
-		/*case WM_NOTIFY:
+		case WM_NOTIFY:
 		{
 			NMHDR* header = (NMHDR*)lParam;
 			NMLISTVIEW* nmlist = (NMLISTVIEW*)lParam;
@@ -82,7 +87,7 @@ BOOL CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			if(header->code == LVN_ITEMCHANGED && nmlist->uNewState & LVIS_STATEIMAGEMASK) {
 			}
 		}
-		return TRUE;*/
+		return TRUE;
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return TRUE;
@@ -93,7 +98,7 @@ BOOL CALLBACK DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	return FALSE;
 }
 
-void InitList(HWND hWnd) {
+void Init(HWND hWnd) {
 	HWND hListView;
 	LVCOLUMN lvc;
 	RECT rect;
@@ -113,6 +118,16 @@ void InitList(HWND hWnd) {
 		lvc.cx = cx;
 
 		ListView_InsertColumn(hListView, i, &lvc);
+	}
+
+	// Load saved settings
+	char closeAfterAdded[2];
+
+	GetPrivateProfileStringA("Default", "closeAfterAdded", "1", closeAfterAdded, sizeof(closeAfterAdded), ".\\config.ini");
+	if(!StrCmpA(closeAfterAdded, "1")) {
+		HWND hCheck = GetDlgItem(hWnd, IDC_CHECK);
+
+		Button_SetCheck(hCheck, TRUE);
 	}
 }
 
